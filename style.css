@@ -1,0 +1,79 @@
+:root{
+  --bg:#0f1720; --card:#0b1220; --muted:#9aa7b2; --accent:#7c3aed; --glass:rgba(255,255,255,0.03);
+  --success:#16a34a; --danger:#ef4444; --shadow: 0 6px 18px rgba(2,6,23,0.6);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font-family:Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Hiragino Kaku Gothic ProN';background:linear-gradient(180deg,#071025 0%, #07121a 40%, #081827 100%);color:#e6eef6;display:flex;flex-direction:column}
+.app-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));backdrop-filter: blur(4px);border-bottom:1px solid rgba(255,255,255,0.03)}
+.brand{font-weight:700;font-size:18px;color:var(--accent);display:flex;align-items:center}
+.brand::before{content:'🎰';margin-right:8px}
+.btn{border-radius:8px;padding:8px 12px;border:0;background:transparent;color:inherit;cursor:pointer;font-weight:600}
+.btn.primary{background:linear-gradient(90deg,var(--accent),#4c1d95);color:white;box-shadow:var(--shadow)}
+.btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04)}
+.btn.danger{background:linear-gradient(90deg,#ef4444,#d44650)}
+.btn.success{background:linear-gradient(90deg,var(--success),#059669)}
+.btn.large{padding:12px 18px;font-size:16px}
+
+.main{padding:20px;display:flex;flex-direction:column;gap:18px;flex:1}
+.panel{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:16px;border-radius:12px;border:1px solid rgba(255,255,255,0.03)}
+.panel-header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.panel-header h2{margin:0;font-size:18px}
+.search-and-filter{display:flex;align-items:center;gap:8px}
+input[type=text], input[type=search], input, textarea, select{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:8px;border-radius:8px;color:inherit}
+textarea{resize:vertical}
+
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-top:14px}
+.card{background:var(--card);padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);display:flex;gap:10px;align-items:center}
+.card .thumb{width:72px;height:72px;border-radius:8px;background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));display:flex;align-items:center;justify-content:center;overflow:hidden}
+.card .meta{flex:1}
+.card .meta h4{margin:0 0 6px 0}
+.card .meta p{margin:0;font-size:12px;color:var(--muted)}
+.card .actions{display:flex;gap:8px}
+.hidden{display:none}
+
+.editor-grid{display:grid;grid-template-columns:1fr 320px;gap:16px;margin-top:12px}
+.preview-panel{min-width:240px}
+.preview-card{background:var(--glass);border-radius:8px;padding:12px;margin-bottom:10px;border:1px solid rgba(255,255,255,0.02)}
+.preview-card.small{padding:8px}
+.thumb-preview{height:96px;border-radius:8px;border:1px dashed rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;color:var(--muted);cursor:pointer}
+.thumb-big{height:130px;border-radius:8px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));display:flex;align-items:center;justify-content:center;overflow:hidden}
+.thumbnails{display:flex;gap:10px;flex-wrap:wrap;min-height:70px;padding:6px;border-radius:8px;border:1px solid rgba(255,255,255,0.02);background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005))}
+.thumbnail{width:72px;height:72px;border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,0.03);position:relative}
+.thumbnail small{position:absolute;bottom:4px;left:4px;font-size:10px;background:rgba(0,0,0,0.35);padding:2px 4px;border-radius:4px}
+.upload-controls{display:flex;gap:6px;align-items:center;margin-top:8px}
+.form-row{display:flex;gap:12px}
+.rarity-inputs{display:flex;gap:6px}
+
+.play-area{display:flex;gap:12px;align-items:flex-start;margin-top:12px}
+.stage{background:#071021;border-radius:8px;border:1px solid rgba(255,255,255,0.03);box-shadow:0 20px 40px rgba(2,6,23,0.6);max-width:100%;height:auto}
+.stage-area{position:relative;flex:1;display:flex;align-items:center;justify-content:center}
+.overlay{position:absolute;inset:0;pointer-events:none}
+.play-info{width:320px;display:flex;flex-direction:column;gap:10px}
+.log{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:10px;border-radius:8px;min-height:120px;border:1px solid rgba(255,255,255,0.02)}
+
+.modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(90deg, rgba(2,6,23,0.7), rgba(2,6,23,0.5));z-index:90}
+.modal-inner{background:var(--card);Padding:18px;border-radius:12px;border:1px solid rgba(255,255,255,0.04);width:min(720px,95%)}
+
+.gacha-info{padding:10px;border-radius:8px;background:rgba(255,255,255,0.02);font-size:13px;border:1px solid rgba(255,255,255,0.01)}
+
+.cards .card .actions .btn{padding:6px 8px;font-size:13px}
+.editor-actions{display:flex;gap:8px;align-items:center}
+
+/* Responsive */
+@media (max-width:980px){
+  .editor-grid{grid-template-columns:1fr}
+  .play-area{flex-direction:column}
+  .play-info{width:100%}
+}
+
+/* minor niceties */
+.mini{padding:6px 8px;border-radius:8px}
+.form-row label{display:flex;flex-direction:column;gap:6px}
+.upload-block h4{margin:8px 0}
+
+.card .meta .title{font-weight:700}
+.cap-anim{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.cap{width:140px;height:160px;border-radius:6px;background:linear-gradient(180deg,#fff,#eee);display:flex;align-items:center;justify-content:center}
+
+.author{color:var(--muted);font-size:12px}
