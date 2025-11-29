@@ -3,25 +3,27 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Gachapon Maker</title>
+    <title>ガチャポンメーカー</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <header class="app-header">
-      <div class="brand">Gachapon Maker</div>
+      <div class="brand">ガチャポンメーカー</div>
       <nav>
-        <button id="btn-new" class="btn primary">New Gacha</button>
-        <button id="btn-tutorial" class="btn ghost">Tutorial</button>
+        <button id="btn-new" class="btn primary">新しいガチャ</button>
+        <button id="btn-tutorial" class="btn ghost">チュートリアル</button>
       </nav>
     </header>
 
     <main class="main">
       <section id="list-view" class="panel">
         <div class="panel-header">
-          <h2>Gacha Library</h2>
+          <h2>ガチャライブラリ</h2>
           <div class="search-and-filter">
-            <input id="search" placeholder="Search by title / author / category" />
-            <select id="category-filter"><option value="all">All categories</option></select>
+            <input id="search" placeholder="タイトル / 作者 / カテゴリで検索" />
+            <select id="category-filter">
+              <option value="all">すべてのカテゴリ</option>
+            </select>
           </div>
         </div>
         <div id="gacha-grid" class="cards"></div>
@@ -29,30 +31,30 @@
 
       <section id="editor-view" class="panel hidden">
         <div class="panel-header">
-          <button id="back-to-list" class="btn ghost">← Back</button>
-          <h2 id="editor-title">Create Gacha</h2>
+          <button id="back-to-list" class="btn ghost">← 戻る</button>
+          <h2 id="editor-title">ガチャ作成</h2>
           <div class="editor-actions">
-            <button id="save-gacha" class="btn primary">Save Gacha</button>
-            <button id="delete-gacha" class="btn danger hidden">Delete</button>
+            <button id="save-gacha" class="btn primary">保存</button>
+            <button id="delete-gacha" class="btn danger hidden">削除</button>
           </div>
         </div>
 
         <div class="editor-grid">
           <form id="gacha-form" autocomplete="off">
-            <label>Title <input id="g-title" required /></label>
-            <label>Category <input id="g-category" placeholder="e.g. Fantasy, Sci-fi"/></label>
-            <label>Author <input id="g-author"/></label>
-            <label>Description <textarea id="g-desc" rows="3"></textarea></label>
+            <label>タイトル <input id="g-title" required /></label>
+            <label>カテゴリ <input id="g-category" placeholder="例：ファンタジー, SF"/></label>
+            <label>作者 <input id="g-author"/></label>
+            <label>説明 <textarea id="g-desc" rows="3"></textarea></label>
 
             <div class="form-row">
               <div class="file-group">
-                <label>Thumbnail</label>
-                <div class="thumb-preview" id="thumb-preview">Drop or click to upload</div>
+                <label>サムネイル</label>
+                <div class="thumb-preview" id="thumb-preview">クリックまたはドロップでアップロード</div>
                 <input id="thumb-input" type="file" accept="image/*" />
               </div>
 
               <div class="rarity-group">
-                <label>Rarity probabilities (%)</label>
+                <label>レアリティ排出率 (%)</label>
                 <div class="rarity-inputs">
                   <label>N <input id="rate-N" type="number" min="0" max="100" value="60"/></label>
                   <label>R <input id="rate-R" type="number" min="0" max="100" value="25"/></label>
@@ -63,39 +65,41 @@
             </div>
 
             <div class="upload-block">
-              <h4>Items (min 5)</h4>
+              <h4>アイテム（最低5つ）</h4>
               <div id="items-list" class="thumbnails"></div>
               <div class="upload-controls">
                 <input id="item-upload" type="file" accept="image/*" multiple />
-                <button id="add-item" type="button" class="btn">Add Item(s)</button>
-                <select id="add-item-rarity" class="mini"><option>N</option><option>R</option><option>SR</option><option>SSR</option></select>
-                <input id="add-item-name" placeholder="Item name" />
+                <button id="add-item" type="button" class="btn">アイテム追加</button>
+                <select id="add-item-rarity" class="mini">
+                  <option>N</option><option>R</option><option>SR</option><option>SSR</option>
+                </select>
+                <input id="add-item-name" placeholder="アイテム名" />
               </div>
             </div>
 
             <div class="upload-block">
-              <h4>Backgrounds (min 5)</h4>
+              <h4>背景（最低5つ）</h4>
               <div id="backgrounds-list" class="thumbnails"></div>
               <div class="upload-controls">
                 <input id="bg-upload" type="file" accept="image/*" multiple />
-                <button id="add-bg" type="button" class="btn">Add Background(s)</button>
+                <button id="add-bg" type="button" class="btn">背景追加</button>
               </div>
             </div>
           </form>
 
           <aside class="preview-panel">
             <div class="preview-card">
-              <div class="preview-title">Thumbnail</div>
+              <div class="preview-title">サムネイル</div>
               <div id="preview-thumb" class="thumb-big"></div>
             </div>
 
             <div class="preview-card">
-              <div class="preview-title">Quick Summary</div>
+              <div class="preview-title">サマリー</div>
               <div id="summary"></div>
             </div>
 
             <div class="preview-card small">
-              <div class="preview-title">Metadata</div>
+              <div class="preview-title">メタデータ</div>
               <div id="meta-list"></div>
             </div>
           </aside>
@@ -104,15 +108,15 @@
 
       <section id="play-view" class="panel hidden">
         <div class="panel-header">
-          <button id="back-to-list-2" class="btn ghost">← Back</button>
-          <h2 id="play-title">Gacha Play</h2>
+          <button id="back-to-list-2" class="btn ghost">← 戻る</button>
+          <h2 id="play-title">ガチャプレイ</h2>
           <div class="play-actions">
             <div class="bg-selector" id="play-bg-list"></div>
             <div class="buttons">
-              <button id="btn-single" class="btn primary large">Single</button>
-              <button id="btn-ten" class="btn primary large">10x</button>
-              <button id="align-ten" class="btn ghost">Arrange 10</button>
-              <button id="save-composite" class="btn success">Save Image</button>
+              <button id="btn-single" class="btn primary large">単発</button>
+              <button id="btn-ten" class="btn primary large">10連</button>
+              <button id="align-ten" class="btn ghost">10連整列</button>
+              <button id="save-composite" class="btn success">画像保存</button>
             </div>
           </div>
         </div>
@@ -132,20 +136,20 @@
       <!-- Tutorial modal -->
       <div id="tutorial" class="modal hidden">
         <div class="modal-inner">
-          <h3>Quick Tutorial</h3>
+          <h3>クイックチュートリアル</h3>
           <ol>
-            <li>Create a new Gacha with thumbnail, 5+ items and 5+ backgrounds.</li>
-            <li>Set rarity probabilities and save.</li>
-            <li>From the library, open a Gacha to play. Choose a background and press Single or 10x.</li>
-            <li>Drag items on canvas, pinch to zoom on mobile. Save your composition as PNG.</li>
+            <li>新しいガチャを作成し、サムネイル、5個以上のアイテム、5個以上の背景を追加します。</li>
+            <li>レアリティ排出率を設定して保存します。</li>
+            <li>ライブラリからガチャを選んでプレイします。背景を選び、単発または10連を押します。</li>
+            <li>アイテムはドラッグで移動できます。スマホではピンチでズーム可能。構成を PNG として保存できます。</li>
           </ol>
-          <button id="close-tutorial" class="btn primary">Got it</button>
+          <button id="close-tutorial" class="btn primary">了解</button>
         </div>
       </div>
 
     </main>
 
-    <footer class="app-footer">Made with ❤️ — Gachapon Maker</footer>
+    <footer class="app-footer">Made with ❤️ — ガチャポンメーカー</footer>
 
     <script src="script.js" type="module"></script>
   </body>
