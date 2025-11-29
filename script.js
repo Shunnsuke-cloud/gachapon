@@ -100,6 +100,8 @@ class App{
     this.setupUI();
     this.refreshList();
     this.tutorialShown = false;
+
+    
   }
 
   cacheDOM(){
@@ -107,7 +109,7 @@ class App{
       listGrid: qs('#gacha-grid'),
       btnNew: qs('#btn-new'),
       btnTutorial: qs('#btn-tutorial'),
-      editorView: qs('#editor-view'), listView: qs('#list-view'), playView: qs('#play-view'), tutorial: qs('#tutorial'), closeTutorial: qs('#close-tutorial'),
+      editorView: qs('#editor-view'), listView: qs('#list-view'), playView: qs('#play-view'),
 
       // editor
       backToList: qs('#back-to-list'), saveGacha: qs('#save-gacha'), deleteGacha: qs('#delete-gacha'), editorTitle: qs('#editor-title'),
@@ -125,8 +127,7 @@ class App{
   setupUI(){
     // events
     this.dom.btnNew.addEventListener('click', ()=>this.openEditor());
-    this.dom.btnTutorial.addEventListener('click', ()=>this.showTutorial());
-    this.dom.closeTutorial.addEventListener('click', ()=>this.hideTutorial());
+    
 
     this.dom.backToList.addEventListener('click', ()=>this.showList());
     this.dom.backToList2.addEventListener('click', ()=>this.showList());
@@ -156,6 +157,8 @@ class App{
     const firstSeen = localStorage.getItem('gachapon_tutorial_accepted');
     if(!firstSeen) setTimeout(()=>this.showTutorial(),300);
   }
+
+  
 
   /* ---------- List management ---------- */
   refreshList(search=''){
@@ -394,8 +397,7 @@ class App{
 
   alignTen(){ this.canvas.arrangeTen(); }
 
-  showTutorial(){ qs('#tutorial').classList.remove('hidden'); }
-  hideTutorial(){ qs('#tutorial').classList.add('hidden'); localStorage.setItem('gachapon_tutorial_accepted','1'); }
+  
 }
 
 /* ---------- Canvas Manager (drawing, drag, touch) ---------- */
