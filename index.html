@@ -11,6 +11,8 @@
       <div class="brand">ガチャポンメーカー</div>
       <nav>
         <button id="btn-new" class="btn primary">新しいガチャ</button>
+        <button id="btn-login" class="btn">ログイン</button>
+        <button id="btn-logout" class="btn ghost hidden">ログアウト</button>
         
       </nav>
     </header>
@@ -35,6 +37,7 @@
           <h2 id="editor-title">ガチャ作成</h2>
           <div class="editor-actions">
             <button id="save-gacha" class="btn primary">保存</button>
+            <span id="save-spinner" class="hidden" aria-hidden="true" style="margin-left:8px">⏳</span>
             <button id="delete-gacha" class="btn danger hidden">削除</button>
           </div>
         </div>
@@ -42,9 +45,13 @@
         <div class="editor-grid">
           <form id="gacha-form" autocomplete="off">
             <label>タイトル <input id="g-title" required /></label>
+            <div class="field-error" id="err-title"></div>
             <label>カテゴリ <input id="g-category" placeholder="例：ファンタジー, SF"/></label>
+            <div class="field-error" id="err-category"></div>
             <label>作者 <input id="g-author"/></label>
+            <div class="field-error" id="err-author"></div>
             <label>説明 <textarea id="g-desc" rows="3"></textarea></label>
+            <div class="field-error" id="err-description"></div>
 
             <div class="form-row">
               <div class="file-group">
@@ -67,6 +74,7 @@
             <div class="upload-block">
               <h4>アイテム（最低5つ）</h4>
               <div id="items-list" class="thumbnails"></div>
+              <div class="field-error" id="err-items"></div>
               <div class="upload-controls">
                 <input id="item-upload" type="file" accept="image/*" multiple />
                 <button id="add-item" type="button" class="btn">アイテム追加</button>
@@ -80,6 +88,7 @@
             <div class="upload-block">
               <h4>背景（最低5つ）</h4>
               <div id="backgrounds-list" class="thumbnails"></div>
+              <div class="field-error" id="err-backgrounds"></div>
               <div class="upload-controls">
                 <input id="bg-upload" type="file" accept="image/*" multiple />
                 <button id="add-bg" type="button" class="btn">背景追加</button>

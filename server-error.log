@@ -1,0 +1,30 @@
+[2025-12-06T04:48:39.175Z] GET /api/gachas error:
+SyntaxError: "[object Object]" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at D:\JAVA\gachapon-1\routes\gachas.js:14:73
+    at Array.map (<anonymous>)
+    at D:\JAVA\gachapon-1\routes\gachas.js:14:19
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+
+[2025-12-06T04:48:39.390Z] GET /api/gachas error:
+SyntaxError: "[object Object]" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at D:\JAVA\gachapon-1\routes\gachas.js:14:73
+    at Array.map (<anonymous>)
+    at D:\JAVA\gachapon-1\routes\gachas.js:14:19
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+
+[2025-12-06T04:48:51.657Z] GET /api/gachas error:
+SyntaxError: "[object Object]" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at D:\JAVA\gachapon-1\routes\gachas.js:14:73
+    at Array.map (<anonymous>)
+    at D:\JAVA\gachapon-1\routes\gachas.js:14:19
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+
+[2025-12-06T04:49:09.831Z] GET /api/gachas/:id error (3):
+SyntaxError: "[object Object]" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at D:\JAVA\gachapon-1\routes\gachas.js:30:52
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+

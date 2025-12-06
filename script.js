@@ -6,6 +6,49 @@ const uid = () => (crypto && crypto.randomUUID) ? crypto.randomUUID() : 'id-' + 
 const nowISO = () => new Date().toISOString();
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
+/* ---------- Auth helpers (simple SPA token flow) ---------- */
+function getToken(){ return localStorage.getItem('accessToken'); }
+function setToken(t){ if(t) localStorage.setItem('accessToken', t); else localStorage.removeItem('accessToken'); }
+async function fetchWithAuth(url, opts = {}){
+  opts.headers = opts.headers || {};
+  const token = getToken();
+  if(token) opts.headers['Authorization'] = 'Bearer ' + token;
+  return fetch(url, opts);
+}
+
+// determine API base for local dev (handles localhost, 127.0.0.1 and common dev ports)
+function apiBase(){
+  const isLocalDev = ['localhost','127.0.0.1'].includes(location.hostname) || location.port === '5500';
+  return isLocalDev ? 'http://localhost:4000' : '';
+}
+
+// Initialize auth UI: hide/show admin actions based on /api/auth/me
+async function initAuthUI(){
+  const token = getToken();
+  const btnNew = document.getElementById('btn-new');
+  const btnLogin = document.getElementById('btn-login');
+  const btnLogout = document.getElementById('btn-logout');
+  if(!btnNew) return; // nothing to do if UI not present
+  if(!token){ if(btnNew) btnNew.classList.add('hidden'); if(btnLogin) btnLogin.classList.remove('hidden'); if(btnLogout) btnLogout.classList.add('hidden'); document.body.classList.remove('is-admin'); return; }
+  try{
+  const base = apiBase();
+    const r = await fetchWithAuth(base + '/api/auth/me');
+    if(!r.ok){ setToken(null); if(btnNew) btnNew.classList.add('hidden'); if(btnLogin) btnLogin.classList.remove('hidden'); if(btnLogout) btnLogout.classList.add('hidden'); document.body.classList.remove('is-admin'); return; }
+    const me = await r.json();
+    if(me.role === 'admin'){ if(btnNew) btnNew.classList.remove('hidden'); document.body.classList.add('is-admin'); }
+    else { if(btnNew) btnNew.classList.add('hidden'); document.body.classList.remove('is-admin'); }
+    if(btnLogin) btnLogin.classList.add('hidden'); if(btnLogout) btnLogout.classList.remove('hidden');
+  }catch(err){ console.error('initAuthUI', err); if(btnNew) btnNew.classList.add('hidden'); document.body.classList.remove('is-admin'); }
+}
+
+// attach global handlers for login/logout (called from DOMContentLoaded)
+function attachAuthButtons(){
+  const btnLogin = document.getElementById('btn-login');
+  const btnLogout = document.getElementById('btn-logout');
+  if(btnLogin) btnLogin.addEventListener('click', ()=>{ window.location.href = '/login.html'; });
+  if(btnLogout) btnLogout.addEventListener('click', ()=>{ setToken(null); localStorage.removeItem('userRole'); window.location.reload(); });
+}
+
 async function fileToDataURL(file){
   return await new Promise((res, rej) => {
     const r = new FileReader();
@@ -155,14 +198,31 @@ class App{
 
     // init tutorial if first time
     const firstSeen = localStorage.getItem('gachapon_tutorial_accepted');
-    if(!firstSeen) setTimeout(()=>this.showTutorial(),300);
+    if(!firstSeen) setTimeout(()=>{ if(typeof this.showTutorial === 'function') this.showTutorial(); },300);
   }
+
+  // optional tutorial hook (no-op default)
+  showTutorial(){ /* no-op; can be overridden */ }
 
   
 
   /* ---------- List management ---------- */
-  refreshList(search=''){
-    this.data = Model.getAll();
+  async refreshList(search=''){
+    // Try to fetch from server first, fall back to local storage
+  const base = apiBase();
+    let list = null;
+    try{
+      const r = await fetch(base + '/api/gachas');
+      if(r.ok) list = await r.json();
+    }catch(err){ console.warn('Failed to fetch gachas from server', err); }
+
+    if(list && Array.isArray(list)){
+      // map server shape to client shape
+      this.data = list.map(s => ({ id: String(s.id), title: s.title, thumbnailImg: s.thumbnail || s.thumbnailImg || '', author: s.author || s.author_id || '—', category: s.category || '', description: s.description || '', rarityRates: (s.rarity_rates ? (typeof s.rarity_rates === 'string' ? JSON.parse(s.rarity_rates) : s.rarity_rates) : {N:60,R:25,SR:12,SSR:3}) }));
+    } else {
+      this.data = Model.getAll();
+    }
+
     this.dom.listGrid.innerHTML = '';
     const sel = qs('#category-filter'); const filterVal = sel ? sel.value : 'all';
     let cards = this.data.filter(s => (!search ? true : (s.title + ' ' + (s.author||'') + ' ' + (s.category||'')).toLowerCase().includes(search.toLowerCase())));
@@ -172,8 +232,34 @@ class App{
     qsa('.card').forEach(el=>{
       el.querySelector('.open').addEventListener('click', ()=>this.openPlayer(el.dataset.id));
       el.querySelector('.edit').addEventListener('click', ()=>this.openEditor(el.dataset.id));
-      el.querySelector('.delete').addEventListener('click', ()=>{ if(confirm('Delete this gacha?')){ Model.removeSet(el.dataset.id); this.refreshList(); } });
+      el.querySelector('.delete').addEventListener('click', async ()=>{
+        if(!confirm('Delete this gacha?')) return;
+        // if admin, call server delete; otherwise fallback to local
+        if(document.body.classList.contains('is-admin')){
+          try{
+            const token = getToken();
+            const headers = { 'Content-Type':'application/json' };
+            if(token) headers['Authorization'] = 'Bearer ' + token;
+            const del = await fetch((location.hostname==='localhost'?'http://localhost:4000':'') + '/api/gachas/' + el.dataset.id, { method: 'DELETE', headers });
+            if(del.ok){ this.refreshList(); return; }
+            alert('Failed to delete on server');
+          }catch(err){ console.warn('delete error', err); alert('Delete failed'); }
+        } else {
+          Model.removeSet(el.dataset.id);
+          this.refreshList();
+        }
+      });
     });
+
+    // hide edit/delete for non-admins (simple client-side guard)
+    if(!document.body.classList.contains('is-admin')){
+      qsa('.card .edit').forEach(b=>b.classList.add('hidden'));
+      qsa('.card .delete').forEach(b=>b.classList.add('hidden'));
+    } else {
+      qsa('.card .edit').forEach(b=>b.classList.remove('hidden'));
+      qsa('.card .delete').forEach(b=>b.classList.remove('hidden'));
+    }
+
     this.updateCategoryFilter();
   }
 
@@ -202,13 +288,29 @@ class App{
   }
 
   /* ---------- Editor ---------- */
-  openEditor(id=null){
+  async openEditor(id=null){
     this.dom.editorTitle.textContent = id ? 'Edit Gacha' : 'Create Gacha';
-    const set = id ? Model.getById(id) : null;
-    this.current = set ? JSON.parse(JSON.stringify(set)) : this.emptySet();
+    // if id provided, try fetch full detail from server (items etc.), else fall back to local model
+    if(id){
+  const base = apiBase();
+      try{
+        const r = await fetch(base + '/api/gachas/' + id);
+        if(r.ok){ const serverG = await r.json(); this.current = this.mapServerGachaToClient(serverG); }
+        else {
+          const set = this.data.find(x=>String(x.id)===String(id)) || Model.getById(id);
+          this.current = set ? JSON.parse(JSON.stringify(set)) : this.emptySet();
+        }
+      }catch(err){
+        const set = this.data.find(x=>String(x.id)===String(id)) || Model.getById(id);
+        this.current = set ? JSON.parse(JSON.stringify(set)) : this.emptySet();
+      }
+    } else {
+      this.current = this.emptySet();
+    }
+
     this.renderEditor();
     this.dom.listView.classList.add('hidden'); this.dom.playView.classList.add('hidden'); this.dom.editorView.classList.remove('hidden');
-    if(set) this.dom.deleteGacha.classList.remove('hidden'); else this.dom.deleteGacha.classList.add('hidden');
+    if(this.current && this.current.id) this.dom.deleteGacha.classList.remove('hidden'); else this.dom.deleteGacha.classList.add('hidden');
   }
 
   emptySet(){ return { id: uid(), title:'', thumbnailImg: initialThumbnails[0], items:[], backgrounds:[], rarityRates: {N:60,R:25,SR:12,SSR:3}, description:'', author:'', createdAt: nowISO(), updatedAt: nowISO(), category: '' } }
@@ -292,6 +394,61 @@ class App{
     `;
   }
 
+  // Map server gacha object to client-side format
+  mapServerGachaToClient(s){
+    if(!s) return this.emptySet();
+    const rates = s.rarity_rates || s.rarityRates || {N:60,R:25,SR:12,SSR:3};
+    // if rates stored as JSON string, parse
+    const parsedRates = (typeof rates === 'string') ? (()=>{ try{return JSON.parse(rates);}catch(e){return {N:60,R:25,SR:12,SSR:3};}})() : rates;
+    return {
+      id: String(s.id),
+      title: s.title || '',
+      thumbnailImg: s.thumbnail || s.thumbnailImg || '',
+      author: s.author || s.author_name || (s.author_id? String(s.author_id) : ''),
+      category: s.category || s.category || '',
+      description: s.description || '',
+      rarityRates: { N: Number(parsedRates.N||0), R: Number(parsedRates.R||0), SR: Number(parsedRates.SR||0), SSR: Number(parsedRates.SSR||0) },
+      items: Array.isArray(s.items) ? s.items.map(it => ({ id: it.id ? String(it.id) : uid(), name: it.name, rarity: it.rarity, imgSrc: it.img_src || it.imgSrc || it.img })) : [],
+      backgrounds: Array.isArray(s.backgrounds) ? s.backgrounds.map(b => ({ id: b.id ? String(b.id) : uid(), imgSrc: b.img_src || b.imgSrc || b.img })) : [],
+      createdAt: s.created_at || s.createdAt || s.createdAt,
+      updatedAt: s.updated_at || s.updatedAt || s.updatedAt
+    };
+  }
+
+  // small transient toast
+  showToast(msg, type='info'){
+    try{
+      const t = document.createElement('div'); t.className = 'gach-toast gach-toast-' + type; t.textContent = msg; t.style.position='fixed'; t.style.right='16px'; t.style.bottom='24px'; t.style.padding='10px 14px'; t.style.background = (type==='error' ? '#b91c1c' : type==='warn' ? '#d97706' : '#064e3b'); t.style.color='white'; t.style.borderRadius='8px'; t.style.boxShadow='0 6px 18px rgba(2,6,23,0.4)'; t.style.zIndex = 9999; document.body.appendChild(t);
+      setTimeout(()=>{ t.style.transition='opacity 300ms'; t.style.opacity = 0; setTimeout(()=>t.remove(), 350); }, 2800);
+    }catch(e){ console.log('toast', msg); }
+  }
+
+  // clear per-field error displays
+  clearFieldErrors(){
+    const ids = ['err-title','err-category','err-author','err-description','err-items','err-backgrounds'];
+    ids.forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = ''; });
+  }
+
+  // show field errors from express-validator style array
+  showFieldErrors(errors){
+    try{
+      if(!errors || !Array.isArray(errors)) return;
+      errors.forEach(e => {
+        const param = e.param || e.field || '';
+        const msg = e.msg || e.message || String(e);
+        let id = null;
+        if(param === 'title') id = 'err-title';
+        else if(param === 'category') id = 'err-category';
+        else if(param === 'author') id = 'err-author';
+        else if(param === 'description') id = 'err-description';
+        else if(param === 'items') id = 'err-items';
+        else if(param === 'backgrounds') id = 'err-backgrounds';
+        else if(param.startsWith('rarity_rates') || param.includes('rate')) id = 'err-description';
+        if(id){ const el = document.getElementById(id); if(el) el.textContent = (el.textContent ? el.textContent + '; ' : '') + msg; }
+      });
+    }catch(e){ console.warn('showFieldErrors', e); }
+  }
+
   validateSet(v){
     const total = Number(v.rarityRates.N)+Number(v.rarityRates.R)+Number(v.rarityRates.SR)+Number(v.rarityRates.SSR);
     if(this.current.items.length < 5) return {ok:false, msg:'Add at least 5 items'};
@@ -301,7 +458,10 @@ class App{
     return {ok:true};
   }
 
-  onSaveGacha(){
+  async onSaveGacha(){
+    // clear previous field errors
+    this.clearFieldErrors();
+
     // collect fields
     this.current.title = this.dom.gTitle.value.trim();
     this.current.category = this.dom.gCategory.value.trim();
@@ -312,11 +472,95 @@ class App{
     const v = this.validateSet(this.current);
     if(!v.ok){ alert(v.msg); return; }
 
-    // save
+  const saveBtn = this.dom.saveGacha; const origLabel = saveBtn.textContent;
+  const spinner = document.getElementById('save-spinner');
+  if(spinner){ spinner.classList.remove('hidden'); spinner.innerHTML = '<span class="spinner"></span>'; }
+  saveBtn.disabled = true; saveBtn.textContent = 'Saving...';
+
+    let savedOnServer = false;
     const existing = Model.getById(this.current.id);
-    if(existing){ Model.updateSet(this.current); } else { Model.addSet(this.current); }
+  const base = apiBase();
+
+    if(document.body.classList.contains('is-admin')){
+      try{
+        const payload = {
+          title: this.current.title,
+          description: this.current.description,
+          category: this.current.category,
+          thumbnail: this.current.thumbnailImg,
+          rarity_rates: this.current.rarityRates,
+          items: this.current.items.map(it => ({ name: it.name, rarity: it.rarity, img_src: it.imgSrc, weight: 1 })),
+          backgrounds: this.current.backgrounds.map(b=>({ img_src: b.imgSrc }))
+        };
+
+        if(existing && existing.id && String(existing.id).match(/^\d+$/)){
+          const r = await fetchWithAuth(base + '/api/gachas/' + existing.id, { method: 'PUT', headers: { 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
+          if(!r.ok){
+            let errMsg = 'Update failed on server';
+            try{
+              const j = await r.json();
+              if(j){
+                if(j.error) errMsg = j.error;
+                else if(Array.isArray(j.errors)){
+                  errMsg = j.errors.map(e => (e.param ? `${e.param}: ${e.msg}` : e.msg)).join('; ');
+                  this.showFieldErrors(j.errors);
+                }
+              }
+            }catch(e){}
+            this.showToast(errMsg, 'error');
+            throw new Error(errMsg);
+          }
+          const fresh = await (await fetchWithAuth(base + '/api/gachas/' + existing.id)).json();
+          this.current = this.mapServerGachaToClient(fresh);
+          savedOnServer = true;
+        } else {
+          const r = await fetchWithAuth(base + '/api/gachas', { method: 'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
+          if(!r.ok){
+            let errMsg = 'Create failed on server';
+            try{
+              const j = await r.json();
+              if(j){
+                if(j.error) errMsg = j.error;
+                else if(Array.isArray(j.errors)){
+                  errMsg = j.errors.map(e => (e.param ? `${e.param}: ${e.msg}` : e.msg)).join('; ');
+                  this.showFieldErrors(j.errors);
+                }
+              }
+            }catch(e){}
+            this.showToast(errMsg, 'error');
+            throw new Error(errMsg);
+          }
+          const j = await r.json();
+          const fresh = await (await fetchWithAuth(base + '/api/gachas/' + j.id)).json();
+          this.current = this.mapServerGachaToClient(fresh);
+          savedOnServer = true;
+        }
+      }catch(err){ console.warn('Server save failed, falling back to local storage', err); this.showToast(err.message || 'Server save failed', 'error'); }
+    }
+
+    // persist locally (canonicalize id->string)
+    try{
+      this.current.id = String(this.current.id || uid());
+      if(existing){ Model.updateSet(this.current); } else { Model.addSet(this.current); }
+      // also update in-memory list for immediate UI
+      const idx = this.data.findIndex(x=>String(x.id) === String(this.current.id));
+      const card = { id: String(this.current.id), title: this.current.title, thumbnailImg: this.current.thumbnailImg, author: this.current.author, category: this.current.category, description: this.current.description, rarityRates: this.current.rarityRates };
+      if(idx >= 0) this.data[idx] = card; else this.data.unshift(card);
+    }catch(e){ console.warn('local save failed', e); }
+
+  if(spinner){ spinner.classList.add('hidden'); spinner.innerHTML = ''; }
+  saveBtn.disabled = false; saveBtn.textContent = origLabel;
+
+    if(savedOnServer){
+      this.showToast('Saved to server', 'info');
+      // remove ?create=1 if present
+      try{ const url = new URL(location.href); url.searchParams.delete('create'); history.replaceState(null, '', url.pathname + url.search); }catch(e){}
+    } else {
+      this.showToast('Saved locally (offline)', 'warn');
+    }
+
     this.showList();
-    this.refreshList();
+    await this.refreshList();
   }
 
   onDeleteGacha(){ if(confirm('Delete this gacha permanently?')){ Model.removeSet(this.current.id); this.showList(); this.refreshList(); } }
@@ -324,8 +568,16 @@ class App{
   showList(){ this.dom.listView.classList.remove('hidden'); this.dom.playView.classList.add('hidden'); this.dom.editorView.classList.add('hidden'); }
 
   /* ---------- Player / Roll ---------- */
-  openPlayer(id){
-    const s = Model.getById(id); if(!s) return alert('Gacha not found');
+  async openPlayer(id){
+    // try fetch full detail from server, fallback to local
+  const base = apiBase();
+    let s = null;
+    try{
+      const r = await fetch(base + '/api/gachas/' + id);
+      if(r.ok) s = this.mapServerGachaToClient(await r.json());
+    }catch(err){ console.warn('fetch detail failed', err); }
+    if(!s) s = this.data.find(x=>String(x.id)===String(id)) || Model.getById(id);
+    if(!s) return alert('Gacha not found');
     this.current = JSON.parse(JSON.stringify(s));
     this.canvas.reset();
     this.dom.playTitle.textContent = s.title;
@@ -497,4 +749,18 @@ function wait(ms){ return new Promise(res=>setTimeout(res, ms)); }
 function distance(a,b){ const dx = a.clientX-b.clientX, dy = a.clientY-b.clientY; return Math.sqrt(dx*dx+dy*dy); }
 
 /* ---------- Initialize app ---------- */
-document.addEventListener('DOMContentLoaded', ()=>{ window.app = new App(); });
+document.addEventListener('DOMContentLoaded', async ()=>{ await initAuthUI(); attachAuthButtons(); window.app = new App();
+  // If requested via ?create=1 and user is admin, open editor immediately
+  try{
+    const params = new URLSearchParams(location.search);
+    if(params.get('create') === '1'){
+      if(document.body.classList.contains('is-admin')){
+        // open new editor
+        window.app.openEditor();
+      } else {
+        // not admin - redirect to login
+        location.href = '/login.html';
+      }
+    }
+  }catch(e){ console.warn('create param handling failed', e); }
+});

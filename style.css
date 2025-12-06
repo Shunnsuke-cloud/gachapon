@@ -77,3 +77,9 @@ textarea{resize:vertical}
 .cap{width:140px;height:160px;border-radius:6px;background:linear-gradient(180deg,#fff,#eee);display:flex;align-items:center;justify-content:center}
 
 .author{color:var(--muted);font-size:12px}
+
+/* field error and spinner */
+.field-error{color:#fecaca;background:rgba(185,28,28,0.06);padding:6px 8px;border-radius:6px;margin-top:6px;font-size:13px}
+.editor-actions .spinner{display:inline-block;width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,0.08);border-top-color:rgba(255,255,255,0.8);animation:spin 900ms linear infinite}
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.gach-toast{backdrop-filter: blur(4px)}
